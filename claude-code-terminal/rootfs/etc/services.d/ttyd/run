@@ -88,14 +88,9 @@ bashio::log.info "Starting ttyd on ingress port ${ingress_port}"
 cd /data/projects || cd /root
 
 exec ttyd \
-    --port "${ingress_port}" \
-    --writable \
-    --ping-interval 30 \
-    --max-clients 5 \
-    --reconnect 10 \
     -i 0.0.0.0 \
+    -p "${ingress_port}" \
+    -W \
     -t fontSize=14 \
     -t fontFamily="Monaco,Consolas,monospace" \
-    -t scrollback=20000 \
-    -t "theme={\"background\":\"#1e1e2e\",\"foreground\":\"#cdd6f4\",\"cursor\":\"#f5e0dc\"}" \
     tmux new-session -A -s "${SESSION_NAME}"
