@@ -1,0 +1,23 @@
+#!/command/with-contenv bashio
+# ==============================================================================
+# Claude Code Terminal - ttyd web terminal server
+# Serves tmux sessions over WebSocket via HA ingress
+# ==============================================================================
+
+# Source environment
+source /etc/profile.d/claude-env.sh
+
+# Get the ingress port assigned by HA
+declare ingress_port
+ingress_port=$(bashio::addon.ingress_port)
+
+bashio::log.info "Starting ttyd on port ${ingress_port}..."
+
+exec ttyd \
+    --interface 0.0.0.0 \
+    --port "${ingress_port}" \
+    --writable \
+    --reconnect 10 \
+    --ping-interval 30 \
+    --base-path "$(bashio::addon.ingress_entry)" \
+    /usr/bin/tmux-session.sh
