@@ -1,23 +1,23 @@
 ---
 name: "Claude Code Terminal"
-version: "1.0.0"
+version: "1.0.1"
 slug: claude_code_terminal
 description: "Claude Code with persistent tmux sessions - never lose your context"
-url: "https://github.com/robertfahndrich/claude-code-haos-addon"
-startup: services
+url: "https://github.com/RobFahndrich/claude-code-haos-addon"
+startup: application
 boot: auto
 init: false
 arch:
   - aarch64
   - amd64
 ingress: true
-ingress_port: 0
+ingress_port: 7681
 ingress_stream: true
 panel_icon: mdi:robot
 panel_title: "Claude Code"
 homeassistant_api: true
 hassio_api: true
-hassio_role: admin
+hassio_role: manager
 map:
   - homeassistant_config:rw
   - addon_config:rw
@@ -36,3 +36,5 @@ schema:
   yolo_mode: "bool"
   tmux_history_limit: "int"
   session_name: "str"
+environment:
+  TERM: xterm-256color
