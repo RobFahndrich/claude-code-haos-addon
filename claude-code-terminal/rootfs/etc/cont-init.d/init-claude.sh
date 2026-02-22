@@ -54,7 +54,6 @@ fi
 # ---------------------------------------------------------------------------
 bashio::log.info "Configuring tmux (scrollback: ${TMUX_HISTORY})..."
 cat > /data/.tmux.conf <<EOF
-# Claude Code Terminal - tmux configuration
 set-option -g history-limit ${TMUX_HISTORY}
 set-option -g mouse on
 set-option -g default-terminal "screen-256color"
@@ -65,20 +64,9 @@ set-option -g status-left " #[fg=#7aa2f7,bold]Claude Code #[fg=#565f89]| "
 set-option -g status-right "#[fg=#565f89]Session: #[fg=#9ece6a]#{session_name} "
 set-option -g status-left-length 30
 set-option -g status-right-length 40
-
-# UTF-8 support
-set-option -g -q utf8 on
-
-# Don't automatically rename windows
 set-option -g allow-rename off
-
-# Start window numbering at 1
 set-option -g base-index 1
-
-# Reduce escape time for faster key response
 set-option -sg escape-time 10
-
-# Increase display time for messages
 set-option -g display-time 3000
 EOF
 
@@ -94,8 +82,6 @@ export CLAUDE_MODEL="${MODEL}"
 export SESSION_NAME="${SESSION_NAME}"
 export TMUX_TMPDIR="/tmp/tmux"
 export TERM="xterm-256color"
-
-# Ensure tmux socket dir exists
 mkdir -p /tmp/tmux
 chmod 700 /tmp/tmux
 EOF

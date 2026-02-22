@@ -37,9 +37,9 @@ COPY rootfs /
 # Make scripts executable
 RUN chmod +x /usr/bin/claude-entrypoint.sh \
     && chmod +x /usr/bin/tmux-session.sh \
-    && chmod +x /etc/s6-overlay/s6-rc.d/init-claude/run \
-    && chmod +x /etc/s6-overlay/s6-rc.d/ttyd/run \
-    && chmod +x /etc/s6-overlay/s6-rc.d/ttyd/finish
+    && chmod +x /etc/cont-init.d/init-claude.sh \
+    && chmod +x /etc/services.d/ttyd/run \
+    && chmod +x /etc/services.d/ttyd/finish
 
 # Create persistent data directories
 RUN mkdir -p /data/.config /data/.cache /data/projects

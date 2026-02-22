@@ -1,4 +1,4 @@
-#!/command/with-contenv bashio
+#!/usr/bin/env bash
 # ==============================================================================
 # Claude Code Terminal - ttyd cleanup on stop/crash
 # ==============================================================================
@@ -6,6 +6,5 @@
 declare exit_code=${1}
 
 if [ "${exit_code}" -ne 0 ] && [ "${exit_code}" -ne 256 ]; then
-    bashio::log.warning "ttyd exited with code ${exit_code}, restarting in 5 seconds..."
     sleep 5
 fi
