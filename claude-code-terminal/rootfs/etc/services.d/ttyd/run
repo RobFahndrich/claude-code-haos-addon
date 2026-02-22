@@ -106,6 +106,27 @@ alias cc="claude --continue"
 RCEOF
 
 # -------------------------------------------------------
+# Create startup script that launches Claude in tmux
+# -------------------------------------------------------
+CLAUDE_ARGS=""
+if [ "${MODEL}" != "default" ] && [ -n "${MODEL}" ]; then
+    CLAUDE_ARGS="--model ${MODEL}"
+fi
+
+cat > /data/claude-start.sh <<STARTEOF
+#!/bin/bash
+source /data/claude-env.sh
+cd /data/projects 2>/dev/null || cd /root
+echo ""
+echo "  Claude Code Terminal for Home Assistant"
+echo "  Session: ${SESSION_NAME} | Model: ${MODEL}"
+echo "  Close this tab anytime - your session persists!"
+echo ""
+exec claude ${CLAUDE_ARGS}
+STARTEOF
+chmod +x /data/claude-start.sh
+
+# -------------------------------------------------------
 # Get the dynamic ingress port from the Supervisor
 # -------------------------------------------------------
 ingress_port=$(bashio::addon.ingress_port)
@@ -122,4 +143,4 @@ exec ttyd \
     -W \
     -t fontSize=14 \
     -t fontFamily="Monaco,Consolas,monospace" \
-    /bin/bash -c "exec tmux new-session -A -s ${SESSION_NAME}"
+    /bin/bash -c "exec tmux new-session -A -s ${SESSION_NAME} /data/claude-start.sh"
