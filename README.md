@@ -46,11 +46,11 @@ Browser tab → HA Ingress → ttyd (web terminal) → tmux session → Claude C
 
 ## Architecture
 
-- Base image: `hassio-addons/debian-base` (s6-overlay included)
+- Base image: `hassio-addons/debian-base` (s6-overlay + bashio included)
 - Node.js 20 LTS for Claude Code
 - tmux for session persistence
 - ttyd for web terminal serving
-- s6-rc services: `init-claude` (oneshot setup) → `ttyd` (longrun server)
+- s6 services.d: `ttyd/run` handles init + terminal server via bashio
 
 ## Supported Architectures
 

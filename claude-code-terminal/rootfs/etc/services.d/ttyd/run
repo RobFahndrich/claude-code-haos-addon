@@ -1,0 +1,101 @@
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
+
+bashio::log.info "=== Claude Code Terminal starting ==="
+
+# -------------------------------------------------------
+# Persistent storage setup
+# -------------------------------------------------------
+PERSIST_DIR=/data/claude-persist
+mkdir -p "${PERSIST_DIR}/config" "${PERSIST_DIR}/cache" /data/projects
+
+# -------------------------------------------------------
+# Read add-on options via bashio
+# -------------------------------------------------------
+API_KEY=$(bashio::config 'anthropic_api_key' '')
+MODEL=$(bashio::config 'model' 'sonnet')
+YOLO_MODE=$(bashio::config 'yolo_mode' 'false')
+TMUX_HISTORY=$(bashio::config 'tmux_history_limit' '50000')
+SESSION_NAME=$(bashio::config 'session_name' 'claude')
+
+# -------------------------------------------------------
+# API key
+# -------------------------------------------------------
+if bashio::var.has_value "${API_KEY}"; then
+    export ANTHROPIC_API_KEY="${API_KEY}"
+    bashio::log.info "Anthropic API key configured"
+else
+    bashio::log.warning "No Anthropic API key set - Claude will prompt for auth"
+fi
+
+# -------------------------------------------------------
+# Symlink Claude config to persistent storage
+# -------------------------------------------------------
+if [ ! -L /root/.claude ]; then
+    rm -rf /root/.claude
+    ln -s "${PERSIST_DIR}" /root/.claude
+fi
+mkdir -p /root/.config
+if [ ! -L /root/.config/claude-code ]; then
+    rm -rf /root/.config/claude-code
+    ln -s "${PERSIST_DIR}/config" /root/.config/claude-code
+fi
+
+# -------------------------------------------------------
+# Update tmux scrollback from options
+# -------------------------------------------------------
+sed -i "s/history-limit.*/history-limit ${TMUX_HISTORY}/" /root/.tmux.conf
+
+# -------------------------------------------------------
+# YOLO mode
+# -------------------------------------------------------
+if bashio::var.true "${YOLO_MODE}"; then
+    bashio::log.info "YOLO mode enabled"
+    echo '{"permissions":{"allow":["Bash(*)","Read(*)","Write(*)","Edit(*)","Glob(*)","Grep(*)"],"deny":[]}}' \
+        > "${PERSIST_DIR}/settings.json"
+fi
+
+# -------------------------------------------------------
+# Export env vars so tmux child processes can see them
+# -------------------------------------------------------
+export CLAUDE_MODEL="${MODEL}"
+export SESSION_NAME="${SESSION_NAME}"
+export TERM=xterm-256color
+export LANG=C.UTF-8
+
+# -------------------------------------------------------
+# Home Assistant MCP server
+# -------------------------------------------------------
+if bashio::var.has_value "${SUPERVISOR_TOKEN:-}"; then
+    bashio::log.info "Configuring Home Assistant MCP server..."
+    claude mcp remove homeassistant -s user 2>/dev/null || true
+    claude mcp add-json homeassistant \
+        "{\"type\":\"http\",\"url\":\"http://supervisor/core/api/mcp\",\"headers\":{\"Authorization\":\"Bearer ${SUPERVISOR_TOKEN}\"}}" \
+        -s user 2>/dev/null \
+        && bashio::log.info "HA MCP configured" \
+        || bashio::log.warning "HA MCP configuration failed (non-fatal)"
+fi
+
+# -------------------------------------------------------
+# Get the dynamic ingress port from the Supervisor
+# -------------------------------------------------------
+ingress_port=$(bashio::addon.ingress_port)
+bashio::log.info "Starting ttyd on ingress port ${ingress_port}"
+
+# -------------------------------------------------------
+# Launch ttyd bound to the ingress port, wrapping tmux
+# -------------------------------------------------------
+cd /data/projects || cd /root
+
+exec ttyd \
+    --port "${ingress_port}" \
+    --writable \
+    --ping-interval 30 \
+    --max-clients 5 \
+    --reconnect 10 \
+    -i 0.0.0.0 \
+    -t fontSize=14 \
+    -t fontFamily="Monaco,Consolas,monospace" \
+    -t scrollback=20000 \
+    -t "theme={\"background\":\"#1e1e2e\",\"foreground\":\"#cdd6f4\",\"cursor\":\"#f5e0dc\"}" \
+    tmux new-session -A -s "${SESSION_NAME}"
