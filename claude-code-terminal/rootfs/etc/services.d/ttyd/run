@@ -56,12 +56,32 @@ if bashio::var.true "${YOLO_MODE}"; then
 fi
 
 # -------------------------------------------------------
-# Export env vars so tmux child processes can see them
+# Write environment file for tmux sessions to source
 # -------------------------------------------------------
-export CLAUDE_MODEL="${MODEL}"
-export SESSION_NAME="${SESSION_NAME}"
+ENV_FILE=/data/claude-env.sh
+cat > "${ENV_FILE}" <<ENVEOF
 export TERM=xterm-256color
 export LANG=C.UTF-8
+export SHELL=/bin/bash
+export CLAUDE_MODEL="${MODEL}"
+export SESSION_NAME="${SESSION_NAME}"
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/root/.npm-global/bin:\${PATH}"
+ENVEOF
+
+if bashio::var.has_value "${API_KEY}"; then
+    echo "export ANTHROPIC_API_KEY=\"${API_KEY}\"" >> "${ENV_FILE}"
+fi
+
+if [ -n "${SUPERVISOR_TOKEN:-}" ]; then
+    echo "export SUPERVISOR_TOKEN=\"${SUPERVISOR_TOKEN}\"" >> "${ENV_FILE}"
+fi
+
+# -------------------------------------------------------
+# Set default shell for tmux
+# -------------------------------------------------------
+export SHELL=/bin/bash
+echo "set-option -g default-shell /bin/bash" >> /root/.tmux.conf
+echo "set-option -g default-command /bin/bash" >> /root/.tmux.conf
 
 # -------------------------------------------------------
 # Home Assistant MCP server
@@ -75,6 +95,15 @@ if bashio::var.has_value "${SUPERVISOR_TOKEN:-}"; then
         && bashio::log.info "HA MCP configured" \
         || bashio::log.warning "HA MCP configuration failed (non-fatal)"
 fi
+
+# -------------------------------------------------------
+# Create a bashrc that sources the env file
+# -------------------------------------------------------
+cat > /root/.bashrc <<'RCEOF'
+[ -f /data/claude-env.sh ] && source /data/claude-env.sh
+alias c="claude"
+alias cc="claude --continue"
+RCEOF
 
 # -------------------------------------------------------
 # Get the dynamic ingress port from the Supervisor
@@ -93,4 +122,4 @@ exec ttyd \
     -W \
     -t fontSize=14 \
     -t fontFamily="Monaco,Consolas,monospace" \
-    tmux new-session -A -s "${SESSION_NAME}"
+    /bin/bash -c "exec tmux new-session -A -s ${SESSION_NAME}"

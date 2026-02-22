@@ -1,6 +1,6 @@
 ---
 name: "Claude Code Terminal"
-version: "1.1.1"
+version: "1.1.2"
 slug: claude_code_terminal
 description: "Claude Code with persistent tmux sessions - never lose your context"
 url: "https://github.com/RobFahndrich/claude-code-haos-addon"
